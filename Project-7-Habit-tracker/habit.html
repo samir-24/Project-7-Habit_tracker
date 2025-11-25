@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Tracker</title>
+    <link rel="stylesheet" href="./habit.css">
+</head>
+
+<body class="p-5">
+    <div class="page">
+
+        <h2 class="title">Add New Task</h2>
+
+        <div class="form-box">
+            <input id="title" type="text" placeholder="Task Title" />
+            <input id="desc" type="text" placeholder="Description" />
+            <input id="category" type="text" placeholder="Category" />
+            <input id="date" type="date" />
+            <button id="addTaskBtn">Add Task</button>
+        </div>
+
+        <!-- 🔍 SEARCH + FILTERS -->
+        <div style="margin: 15px 0; display:flex; gap:10px;">
+            <input id="searchInput" type="text" placeholder="Search Title or Category"
+                style="flex:1; padding:8px; border-radius:6px;">
+
+            <select id="filterStatus" style="padding:8px; border-radius:6px;">
+                <option value="all">All</option>
+                <option value="Pending">Pending</option>
+                <option value="Completed">Completed</option>
+                <option value="Overdue">Overdue</option>
+            </select>
+        </div>
+
+        <h3 class="list-title">Task List:</h3>
+        <div id="taskList" class="task-box"></div>
+
+        <div class="page">
+            <div id="summaryBar">
+                <span id="total">Total Tasks: 0</span>
+                <span id="comp">Completed: 0</span>
+                <span id="pend">Pending: 0</span>
+                <span id="over">Overdue: 0</span>
+            </div>
+        </div>
+
+        <script>
+            let tasks = [];
+
+            function addTask() {
+                const title = document.getElementById("title").value;
+                const desc = document.getElementById("desc").value;
+                const category = document.getElementById("category").value;
+                const date = document.getElementById("date").value;
+
+                if (!title || !desc || !category || !date) {
+                    alert("Please enter all fields properly!");
+                    return;
+                }
+
+                const task = {
+                    id: Date.now(),
+                    title,
+                    desc,
+                    category,
+                    date,
+                    status: "Pending"
+                };
+
+                tasks.push(task);
+                showTasks();
+                updateBar();
+
+                document.getElementById("title").value = "";
+                document.getElementById("desc").value = "";
+                document.getElementById("category").value = "";
+                document.getElementById("date").value = "";
+            }
+
+            function getFilteredTasks() {
+                const search = document.getElementById("searchInput").value.toLowerCase();
+                const status = document.getElementById("filterStatus").value;
+
+                const today = new Date().toISOString().split("T")[0];
+
+                return tasks.filter(task => {
+                    let matchesSearch =
+                        task.title.toLowerCase().includes(search) ||
+                        task.category.toLowerCase().includes(search);
+
+                    let matchesStatus = true;
+                    if (status === "Completed") matchesStatus = task.status === "Completed";
+                    if (status === "Pending") matchesStatus = task.status === "Pending";
+                    if (status === "Overdue") matchesStatus = (task.date < today && task.status !== "Completed");
+
+                    return matchesSearch && matchesStatus;
+                });
+            }
+
+            function showTasks() {
+                const taskList = document.getElementById("taskList");
+                taskList.innerHTML = "";
+
+                const filtered = getFilteredTasks();
+
+                if (filtered.length === 0) {
+                    taskList.innerHTML = "<p>No tasks found...</p>";
+                    return;
+                }
+
+                filtered.forEach(task => {
+                    const card = document.createElement("div");
+                    card.style.border = "1px solid black";
+                    card.style.padding = "10px";
+                    card.style.margin = "10px 0";
+
+                    card.innerHTML = `
+            <strong>${task.title}</strong> - ${task.status} <br>
+            ${task.desc} <br>
+            Category: ${task.category} <br>
+            Due: ${task.date} <br><br>
+
+            <button class="complete-btn" onclick="markComplete(${task.id})">Complete</button>
+            <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
+        `;
+
+                    taskList.appendChild(card);
+                });
+            }
+
+
+            function markComplete(id) {
+                tasks = tasks.map(task =>
+                    task.id === id ? { ...task, status: "Completed" } : task
+                );
+                showTasks();
+                updateBar();
+            }
+
+            function deleteTask(id) {
+                tasks = tasks.filter(task => task.id !== id);
+                showTasks();
+                updateBar();
+            }
+
+            document.getElementById("addTaskBtn").addEventListener("click", addTask);
+            document.getElementById("searchInput").addEventListener("input", showTasks);
+            document.getElementById("filterStatus").addEventListener("change", showTasks);
+
+            function updateBar() {
+                document.getElementById("total").innerText = "Total Tasks: " + tasks.length;
+                document.getElementById("comp").innerText = "Completed: " +
+                    tasks.filter(t => t.status === "Completed").length;
+                document.getElementById("pend").innerText = "Pending: " +
+                    tasks.filter(t => t.status === "Pending").length;
+
+                const today = new Date().toISOString().split("T")[0];
+                const overdue = tasks.filter(t => t.date < today && t.status !== "Completed").length;
+                document.getElementById("over").innerText = "Overdue: " + overdue;
+            }
+        </script>
+</body>
+
+</html>
